@@ -12,6 +12,10 @@ type CreateResult =
   | { ok: true }
   | { ok: false; error: string; fieldErrors?: Record<string, string[]> };
 
+type UpdateResult =
+  | { ok: true }
+  | { ok: false; error: string; fieldErrors?: Record<string, string[]> };
+
 /**
  * Cria um novo produto na boutique Bella Trama.
  *
@@ -74,6 +78,73 @@ export async function createProduct(input: unknown): Promise<CreateResult> {
   } catch (err) {
     console.error("[createProduct] erro:", err);
     return { ok: false, error: "Falha ao criar produto" };
+  }
+}
+
+/**
+ * Atualiza um produto existente da boutique Bella Trama.
+ *
+ * Mesmo contrato de validação/normalização do `createProduct`:
+ * - `productInputSchema` (single source of truth client+server)
+ * - Categoria "Acessórios" força `subcategory = null` (defesa em profundidade)
+ * - Strings vazias em `description`/`imageUrl` viram `null` no DB
+ *
+ * Diferenças:
+ * - Verifica existência do produto antes do update — `prisma.update` lançaria
+ *   P2025 mas preferimos uma mensagem amigável e fluxo `{ ok: false }`.
+ * - Não exige `storeId`: o id do produto já é suficiente para localizá-lo.
+ *   (Em multi-tenancy real precisaria validar que o produto pertence à store
+ *   do usuário autenticado — fica para a iteração de Auth.)
+ */
+export async function updateProduct(
+  id: string,
+  input: unknown
+): Promise<UpdateResult> {
+  const parsed = productInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: "Dados inválidos",
+      fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]>,
+    };
+  }
+
+  try {
+    const existing = await prisma.product.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+    if (!existing) {
+      return { ok: false, error: "Produto não encontrado" };
+    }
+
+    const data = parsed.data;
+    const subcategory =
+      data.category === "Acessórios" ? null : data.subcategory?.trim() || null;
+    const imageUrl = data.imageUrl?.trim() ? data.imageUrl.trim() : null;
+    const description = data.description?.trim() ? data.description.trim() : null;
+
+    await prisma.product.update({
+      where: { id: existing.id },
+      data: {
+        name: data.name,
+        description,
+        price: data.price,
+        imageUrl,
+        category: data.category,
+        subcategory,
+        stock: data.stock,
+        active: data.active,
+      },
+    });
+
+    revalidatePath("/admin/produtos");
+    revalidatePath("/loja/bella-trama");
+
+    return { ok: true };
+  } catch (err) {
+    console.error("[updateProduct] erro:", err);
+    return { ok: false, error: "Falha ao atualizar produto" };
   }
 }
 
