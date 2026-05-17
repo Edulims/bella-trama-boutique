@@ -1,7 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import {
-  Plus,
   Search,
   Filter,
   ImageOff,
@@ -14,6 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ToggleActiveButton } from "./_components/toggle-active-button";
+import { NewProductSheet } from "./_components/new-product-sheet";
+import { TOP_CATEGORIES, type TopCategory } from "./_lib/product-schema";
 
 // Filtros vêm via querystring para funcionar sem JS (form GET).
 // Suportados: ?q=texto&categoria=Masculino|Feminino|Acessorios&subcategoria=...&status=ativos|inativos|todos
@@ -23,10 +24,6 @@ type SearchParams = Promise<{
   subcategoria?: string;
   status?: string;
 }>;
-
-// Top-level fixo — independente do banco para garantir ordem e i18n consistentes.
-const TOP_CATEGORIES = ["Masculino", "Feminino", "Acessórios"] as const;
-type TopCategory = (typeof TOP_CATEGORIES)[number];
 
 async function getData(params: {
   q?: string;
@@ -150,15 +147,7 @@ export default async function ProdutosPage({
             {activeCount === 1 ? "" : "s"} no catálogo
           </p>
         </div>
-        {/* TODO (iteração 3): habilitar criação de produto via Sheet + Server Action */}
-        <Button
-          disabled
-          className="bg-brand-rose-700 hover:bg-brand-rose-800 text-white border-0 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
-          title="Disponível em breve"
-        >
-          <Plus size={15} className="mr-1" />
-          Novo produto
-        </Button>
+        <NewProductSheet />
       </div>
 
       {/* Filtros — form GET para preservar acessibilidade e funcionar sem JS */}
