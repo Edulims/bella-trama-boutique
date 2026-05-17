@@ -121,7 +121,17 @@ O projeto tem um agente especializado e 4 skills configuradas em `.claude/`:
 ✅ Design system premium aplicado (fontes, paletas, Shadcn/ui)
 ✅ Carrinho com Sheet, finalização via WhatsApp funcionando
 ✅ Insights da IA com cards gradient + CTAs pulsantes + Sheet de mensagem com IA
-✅ Placeholders para `/admin/{produtos,pedidos,clientes}`
+✅ Placeholders para `/admin/pedidos` e `/admin/clientes`
+✅ Agente + 4 skills configurados em `.claude/`
+✅ **Publicado no GitHub:** https://github.com/Edulims/bella-trama-boutique (commit inicial `44587f2`)
+✅ **Produtos (admin) — Iteração 1:** listagem read-only com busca, filtros de categoria/subcategoria/status, empty state, skeleton de loading
+✅ **Categorias reestruturadas:** Masculino / Feminino / Acessórios (com campo `subcategory String?` no schema); seed expandido para **31 produtos**
+
+### Pendências cosméticas (atualizar quando o usuário fornecer)
+- Placeholders no README: LinkedIn, email, site do autor estão como `_(adicione seu link)_`
+- Screenshots de `/loja/bella-trama` e `/admin/insights` no README (opcional, alto impacto visual)
+- Botão "Deploy to Vercel" no README (opcional)
+- GitHub topics: `nextjs typescript tailwindcss prisma claude-code saas portfolio`
 
 ## Próximos passos sugeridos (escolher um)
 
