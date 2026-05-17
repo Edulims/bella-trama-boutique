@@ -241,9 +241,9 @@ Este projeto faz parte do portfólio de **Eduardo Lima** ([@Edulims](https://git
 
 **Disponível para conversas com clientes e recrutadores.**
 
-- LinkedIn: _(adicione seu link)_
-- Email: _(adicione seu email)_
-- Site: _(adicione seu portfólio)_
+- LinkedIn: _https://www.linkedin.com/in/eduardolimapublic/_
+- Email: _educmlima@gmail.com_
+- Site: _"Em construção"_
 
 ---
 
