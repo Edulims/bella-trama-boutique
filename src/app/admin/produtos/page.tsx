@@ -13,6 +13,7 @@ import { cn, formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { ToggleActiveButton } from "./_components/toggle-active-button";
 
 // Filtros vêm via querystring para funcionar sem JS (form GET).
 // Suportados: ?q=texto&categoria=Masculino|Feminino|Acessorios&subcategoria=...&status=ativos|inativos|todos
@@ -386,6 +387,15 @@ export default async function ProdutosPage({
                       ? "Esgotado"
                       : `${product.stock} em estoque`}
                   </p>
+                </div>
+
+                {/* Ações do card (iteração 2: toggle ativo/inativo) */}
+                <div className="mt-3 pt-3 border-t border-stone-100 flex justify-end">
+                  <ToggleActiveButton
+                    productId={product.id}
+                    productName={product.name}
+                    active={product.active}
+                  />
                 </div>
               </CardContent>
             </Card>
