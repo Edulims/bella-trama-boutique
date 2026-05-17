@@ -1,12 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import {
-  Search,
-  Filter,
-  ImageOff,
-  PackageSearch,
-  X,
-} from "lucide-react";
+import { ImageOff, PackageSearch } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { cn, formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -14,9 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ToggleActiveButton } from "./_components/toggle-active-button";
 import { NewProductSheet } from "./_components/new-product-sheet";
+import { ProductFilters } from "./_components/product-filters";
 import { TOP_CATEGORIES, type TopCategory } from "./_lib/product-schema";
 
-// Filtros vêm via querystring para funcionar sem JS (form GET).
+// Filtros chegam pela URL — `ProductFilters` (client) navega via router.push
+// e o servidor re-renderiza com base nestes searchParams.
 // Suportados: ?q=texto&categoria=Masculino|Feminino|Acessorios&subcategoria=...&status=ativos|inativos|todos
 type SearchParams = Promise<{
   q?: string;
@@ -61,16 +57,11 @@ async function getData(params: {
   if (status === "ativos") where.active = true;
   if (status === "inativos") where.active = false;
 
-  const subcategoriesPromise = categoria && categoria !== "Acessórios"
-    ? prisma.product.findMany({
-        where: { storeId: store.id, category: categoria, subcategory: { not: null } },
-        distinct: ["subcategory"],
-        select: { subcategory: true },
-        orderBy: { subcategory: "asc" },
-      })
-    : Promise.resolve([] as { subcategory: string | null }[]);
-
-  const [products, allForCounts, subcategoriesRaw] = await Promise.all([
+  // Buscamos TODAS as subcategorias agrupadas por categoria — o componente
+  // de filtros (client) precisa saber quais subcats existem por categoria
+  // para mostrar/popular o select instantaneamente quando o usuário muda
+  // a categoria, sem fazer round-trip pro servidor.
+  const [products, allForCounts, subcatRowsAll] = await Promise.all([
     prisma.product.findMany({
       where,
       orderBy: [{ active: "desc" }, { category: "asc" }, { subcategory: "asc" }, { createdAt: "desc" }],
@@ -79,18 +70,26 @@ async function getData(params: {
       where: { storeId: store.id },
       select: { active: true },
     }),
-    subcategoriesPromise,
+    prisma.product.findMany({
+      where: { storeId: store.id, subcategory: { not: null } },
+      distinct: ["category", "subcategory"],
+      select: { category: true, subcategory: true },
+      orderBy: [{ category: "asc" }, { subcategory: "asc" }],
+    }),
   ]);
 
-  const subcategories = subcategoriesRaw
-    .map((s) => s.subcategory)
-    .filter((s): s is string => !!s);
+  const subcategoriesByCategory: Record<string, string[]> = {};
+  for (const row of subcatRowsAll) {
+    if (row.category && row.subcategory) {
+      (subcategoriesByCategory[row.category] ??= []).push(row.subcategory);
+    }
+  }
 
   return {
     products,
     total: allForCounts.length,
     activeCount: allForCounts.filter((p) => p.active).length,
-    subcategories,
+    subcategoriesByCategory,
     filters: {
       q: q ?? "",
       categoria: categoria ?? "todas",
@@ -105,9 +104,6 @@ function stockColor(stock: number) {
   if (stock <= 3) return "text-amber-600";
   return "text-stone-600";
 }
-
-const baseInputClass =
-  "h-10 w-full rounded-lg border border-stone-200 bg-white px-3 text-sm text-stone-800 placeholder:text-stone-400 focus:border-brand-rose-400 focus:outline-none focus:ring-2 focus:ring-brand-rose-200 transition-colors";
 
 export default async function ProdutosPage({
   searchParams,
@@ -125,9 +121,7 @@ export default async function ProdutosPage({
     );
   }
 
-  const { products, total, activeCount, subcategories, filters } = data;
-  const showSubcategoryFilter =
-    filters.categoria !== "todas" && filters.categoria !== "Acessórios" && subcategories.length > 0;
+  const { products, total, activeCount, subcategoriesByCategory, filters } = data;
   const hasActiveFilters =
     !!filters.q ||
     filters.categoria !== "todas" ||
@@ -150,131 +144,12 @@ export default async function ProdutosPage({
         <NewProductSheet />
       </div>
 
-      {/* Filtros — form GET para preservar acessibilidade e funcionar sem JS */}
-      <Card className="border-stone-200/80 shadow-sm">
-        <CardContent className="p-4">
-          <form
-            method="GET"
-            className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end"
-          >
-            {/* Busca por nome */}
-            <div className="md:col-span-5">
-              <label
-                htmlFor="filter-q"
-                className="block text-[10px] uppercase tracking-wider font-semibold text-stone-500 mb-1.5"
-              >
-                Buscar por nome
-              </label>
-              <div className="relative">
-                <Search
-                  size={14}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none"
-                />
-                <input
-                  id="filter-q"
-                  type="text"
-                  name="q"
-                  defaultValue={filters.q}
-                  placeholder="Ex: Vestido midi..."
-                  className={cn(baseInputClass, "pl-9")}
-                />
-              </div>
-            </div>
-
-            {/* Categoria principal */}
-            <div className={showSubcategoryFilter ? "md:col-span-2" : "md:col-span-3"}>
-              <label
-                htmlFor="filter-cat"
-                className="block text-[10px] uppercase tracking-wider font-semibold text-stone-500 mb-1.5"
-              >
-                Categoria
-              </label>
-              <select
-                id="filter-cat"
-                name="categoria"
-                defaultValue={filters.categoria}
-                className={baseInputClass}
-              >
-                <option value="todas">Todas</option>
-                {TOP_CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Subcategoria — só renderiza se uma categoria principal com subcategorias está selecionada */}
-            {showSubcategoryFilter && (
-              <div className="md:col-span-2">
-                <label
-                  htmlFor="filter-subcat"
-                  className="block text-[10px] uppercase tracking-wider font-semibold text-stone-500 mb-1.5"
-                >
-                  Subcategoria
-                </label>
-                <select
-                  id="filter-subcat"
-                  name="subcategoria"
-                  defaultValue={filters.subcategoria}
-                  className={baseInputClass}
-                >
-                  <option value="todas">Todas</option>
-                  {subcategories.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {/* Status */}
-            <div className="md:col-span-1">
-              <label
-                htmlFor="filter-status"
-                className="block text-[10px] uppercase tracking-wider font-semibold text-stone-500 mb-1.5"
-              >
-                Status
-              </label>
-              <select
-                id="filter-status"
-                name="status"
-                defaultValue={filters.status}
-                className={baseInputClass}
-              >
-                <option value="todos">Todos</option>
-                <option value="ativos">Ativos</option>
-                <option value="inativos">Inativos</option>
-              </select>
-            </div>
-
-            {/* Ações */}
-            <div className="md:col-span-2 flex items-center gap-2">
-              <Button
-                type="submit"
-                className="flex-1 bg-stone-900 hover:bg-stone-800 text-white border-0 h-10"
-              >
-                <Filter size={14} className="mr-1.5" />
-                Filtrar
-              </Button>
-              {hasActiveFilters && (
-                <Button
-                  asChild
-                  type="button"
-                  variant="ghost"
-                  className="h-10 px-3 text-stone-500 hover:text-stone-700 hover:bg-stone-100"
-                  title="Limpar filtros"
-                >
-                  <Link href="/admin/produtos">
-                    <X size={14} />
-                  </Link>
-                </Button>
-              )}
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+      {/* Filtros — Client Component para o select de Subcategoria aparecer
+          instantaneamente quando o usuário muda Categoria, sem submit. */}
+      <ProductFilters
+        initial={filters}
+        subcategoriesByCategory={subcategoriesByCategory}
+      />
 
       {/* Empty state */}
       {products.length === 0 ? (
