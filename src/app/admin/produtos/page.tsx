@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ToggleActiveButton } from "./_components/toggle-active-button";
 import { NewProductSheet } from "./_components/new-product-sheet";
 import { EditProductSheet } from "./_components/edit-product-sheet";
+import { DeleteProductButton } from "./_components/delete-product-button";
 import { ProductFilters } from "./_components/product-filters";
 import { TOP_CATEGORIES, type TopCategory } from "./_lib/product-schema";
 
@@ -254,13 +255,17 @@ export default async function ProdutosPage({
                   </p>
                 </div>
 
-                {/* Ações do card: Editar + Toggle ativo/inativo */}
+                {/* Ações do card: Editar + Toggle ativo/inativo + Excluir */}
                 <div className="mt-3 pt-3 border-t border-stone-100 flex justify-end gap-1">
                   <EditProductSheet product={product} />
                   <ToggleActiveButton
                     productId={product.id}
                     productName={product.name}
                     active={product.active}
+                  />
+                  <DeleteProductButton
+                    productId={product.id}
+                    productName={product.name}
                   />
                 </div>
               </CardContent>
