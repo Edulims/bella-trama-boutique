@@ -16,6 +16,12 @@ type UpdateResult =
   | { ok: true }
   | { ok: false; error: string; fieldErrors?: Record<string, string[]> };
 
+type DeleteResult =
+  | { ok: true }
+  | { ok: false; reason: "HAS_ORDERS"; orderCount: number }
+  | { ok: false; reason: "NOT_FOUND" }
+  | { ok: false; reason: "UNKNOWN" };
+
 /**
  * Cria um novo produto na boutique Bella Trama.
  *
@@ -156,6 +162,50 @@ export async function updateProduct(
  * `/loja/bella-trama` (catálogo público que filtra por `active`), pois o
  * estado de visibilidade afeta as duas rotas simultaneamente.
  */
+/**
+ * Exclui um produto definitivamente. Iteração 5 do CRUD.
+ *
+ * Decisão de design (alinhada com o usuário):
+ * - Bloquear o delete se houver `OrderItem` referenciando o produto, em vez
+ *   de cascatear/SetNull. O schema atual não tem onDelete configurado, então
+ *   um `delete` direto estouraria FK constraint (P2003) no SQLite.
+ * - Sugerir ao usuário usar "Desativar" quando há pedidos — preserva histórico
+ *   sem snapshot/soft delete.
+ *
+ * Retorno discriminado:
+ * - `HAS_ORDERS` carrega `orderCount` para a UI mostrar "está em N pedidos".
+ * - `NOT_FOUND` quando o produto já foi removido (duplo clique etc).
+ * - `UNKNOWN` é o fallback de qualquer falha inesperada do Prisma.
+ */
+export async function deleteProduct(id: string): Promise<DeleteResult> {
+  try {
+    const existing = await prisma.product.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+    if (!existing) {
+      return { ok: false, reason: "NOT_FOUND" };
+    }
+
+    const orderCount = await prisma.orderItem.count({
+      where: { productId: id },
+    });
+    if (orderCount > 0) {
+      return { ok: false, reason: "HAS_ORDERS", orderCount };
+    }
+
+    await prisma.product.delete({ where: { id: existing.id } });
+
+    revalidatePath("/admin/produtos");
+    revalidatePath("/loja/bella-trama");
+
+    return { ok: true };
+  } catch (err) {
+    console.error("[deleteProduct] erro:", err);
+    return { ok: false, reason: "UNKNOWN" };
+  }
+}
+
 export async function toggleProductActive(
   productId: string
 ): Promise<ToggleResult> {
