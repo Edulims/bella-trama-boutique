@@ -115,46 +115,38 @@ O projeto tem um agente especializado e 4 skills configuradas em `.claude/`:
 - **Agente fullstack** — peça "use o simplifica-fullstack para implementar X" ou eu acionarei automaticamente em tarefas multi-camada.
 - **Skills** — digitar `/backend`, `/frontend`, `/infraestrutura` ou `/seguranca` (ou eu invoco automaticamente conforme o contexto da pergunta).
 
-## Onde paramos
+## Onde paramos — MVP "Demo Local Polida" COMPLETO ✅
 
-✅ MVP funcional completo (banco + 3 áreas: landing, catálogo, admin)
-✅ Design system premium aplicado (fontes, paletas, Shadcn/ui)
-✅ Carrinho com Sheet, finalização via WhatsApp funcionando
-✅ Insights da IA com cards gradient + CTAs pulsantes + Sheet de mensagem com IA
-✅ Placeholders para `/admin/pedidos` e `/admin/clientes`
-✅ Agente + 4 skills configurados em `.claude/`
-✅ **Publicado no GitHub:** https://github.com/Edulims/bella-trama-boutique (commit inicial `44587f2`)
-✅ **Produtos (admin) — Iteração 1:** listagem read-only com busca, filtros de categoria/subcategoria/status, empty state, skeleton de loading
-✅ **Categorias reestruturadas:** Masculino / Feminino / Acessórios (com campo `subcategory String?` no schema); seed expandido para **31 produtos**
+Decisão estratégica (2026-05-17): **rodar 100% local até primeiro cliente real**. Sem custos com Vercel/Neon/OAuth/Anthropic. Pitch acontece com `npm run dev` na frente do cliente. Roteiro completo em [`DEMO.md`](DEMO.md).
+
+### Tudo entregue
+
+✅ Landing premium (`/`) com gradient escuro
+✅ Catálogo público mobile-first (`/loja/bella-trama`) com carrinho Sheet + checkout WhatsApp
+✅ Dashboard `/admin` com métricas + pedidos recentes + card destaque IA
+✅ **Insights da IA** (`/admin/insights`) com cards gradient + CTAs pulsantes + Sheet de mensagem (mock convincente — IA real fica pra "v2 quando houver cliente pagando")
+✅ **CRUD completo de Produtos** (`/admin/produtos`) — 5 iterações: listagem read-only → toggle ativar/desativar → criar via Sheet+Zod → editar via Sheet pré-preenchida → excluir com AlertDialog que bloqueia se houver pedidos
+✅ **Pedidos** (`/admin/pedidos`) — listagem real com 4 mini-cards de status, filtros, dropdown de mudança de status no card, Sheet de detalhe
+✅ **Clientes** (`/admin/clientes`) — listagem real com segmentação automática VIP/Ativo/Inativo/Novo (calculada em memória dos pedidos), 4 mini-cards de stats, busca, Sheet "Disparar WhatsApp" com templates por tier
+✅ **Seed enriquecido** — 31 produtos, 10 clientes com perfis intencionais, 28 pedidos espalhados em 90 dias
+✅ Agente + 4 skills em `.claude/`
+✅ Scripts dev preventivos: `typecheck`, `clean`, `dev:fresh` pra recuperar quando `.next` corromper
+✅ **Publicado no GitHub:** https://github.com/Edulims/bella-trama-boutique
 
 ### Pendências cosméticas (atualizar quando o usuário fornecer)
 - Placeholders no README: LinkedIn, email, site do autor estão como `_(adicione seu link)_`
 - Screenshots de `/loja/bella-trama` e `/admin/insights` no README (opcional, alto impacto visual)
-- Botão "Deploy to Vercel" no README (opcional)
 - GitHub topics: `nextjs typescript tailwindcss prisma claude-code saas portfolio`
 
-## Próximos passos sugeridos (escolher um)
+## Quando reativar trabalho (gatilhos comerciais)
 
-1. **CRUD real de Produtos** em `/admin/produtos`
-   - Listagem com busca/filtro por categoria/status
-   - Modal/Sheet de cadastro e edição (form + upload de imagem)
-   - Toggle de ativar/desativar produto
-   - Server Actions do Next 15
+**NÃO investir tempo nessas frentes até ter sinal claro de demanda real:**
 
-2. **Kanban de Pedidos** em `/admin/pedidos`
-   - Drag-and-drop entre colunas (Pendente/Confirmado/Enviado/Entregue)
-   - Detalhe lateral com Sheet
-   - Histórico de mudanças de status
-
-3. **Autenticação NextAuth** protegendo `/admin/*`
-   - Login simples (Credentials + Google)
-   - Middleware Next 15 para guard
-   - Sessão associada à Store (multi-tenancy básico)
-
-4. **Página de Clientes** com perfis e segmentação
-   - Lista com ticket médio, última compra, status (VIP/Inativa)
-   - Botão "Disparar WhatsApp" reutilizando o gerador de mensagem dos Insights
-
-5. **Integração com OpenAI/Anthropic real** para os Insights
-   - Substituir o array `mockInsights` por uma chamada de API
-   - Função de geração de mensagem WhatsApp via Claude/GPT
+1. **Deploy Vercel + Postgres Neon + Google OAuth** — quando recrutador ou cliente pedir uma URL pública pra acessar sozinho
+2. **Claude API real nos Insights** (substitui `mockInsights`) — quando primeiro cliente pagar (custo ~$5-20/mês)
+3. **Multi-tenant real** (Membership, RLS, troca de loja) — quando aparecer 2º lojista
+4. **Stripe billing + onboarding self-service** — quando alguém disser "tenho cartão, quero pagar agora"
+5. **Robô WhatsApp** (Twilio/Z-API) — só se virar pitch enterprise
+6. **Upload de imagem** (Vercel Blob) — quando lojista real precisar (hoje aceita URL externa)
+7. **Kanban DnD em /pedidos** — quando lojista pedir explicitamente (dropdown atual vende a mesma demo)
+8. **Testes amplos + CI** — quando começar a ter regressões reais em produção
