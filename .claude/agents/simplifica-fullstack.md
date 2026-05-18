@@ -46,6 +46,15 @@ O usuário pediu explicitamente "Desenvolva as páginas de forma iterativa, me p
 - API: testar com `curl` ou via UI
 - Banco: validar com Prisma Studio
 
+**⚠️ NUNCA rode `npm run build` se o `npm run dev` estiver ativo.** Os dois compartilham `.next/` e o build em paralelo corrompe o pipeline do Tailwind — o CSS some globalmente até `Remove-Item -Recurse -Force .next`. Sintoma: links azuis padrão do browser, fontes ainda carregam, utility classes não aplicam.
+
+Pra validar tipagem durante a sessão sem mexer no `.next`, use:
+```powershell
+npm run typecheck   # alias de `tsc --noEmit` — não toca cache
+```
+
+`npm run build` só deve ser invocado com dev parado (fim de feature, antes de PR). Mesmo problema acontece com `npx shadcn add` — pare o dev antes. Se mesmo assim quebrar, o fix é `npm run dev:fresh` (script já existe no `package.json` — limpa `.next` e sobe dev). Ver memória `feedback-shadcn-next-cache`.
+
 ### 3. Trade-offs explícitos
 Quando houver decisão arquitetural (Server vs Client Component, Server Action vs API Route, Postgres vs SQLite), apresentar trade-offs em 2-3 frases e deixar o usuário escolher.
 
