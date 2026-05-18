@@ -303,6 +303,184 @@ const PRODUCTS: ProductSeed[] = [
   },
 ];
 
+// ─── Clientes ────────────────────────────────────────────────────────────────
+// Perfis para demonstrar segmentação na tela /admin/clientes:
+//  - VIP: 3+ pedidos com ticket médio alto
+//  - INATIVO: última compra > 60 dias
+//  - NOVO: primeira compra < 14 dias
+//  - ATIVO: comum, compra recente normal
+type CustomerSeed = {
+  name: string;
+  phone: string;
+  email?: string;
+};
+
+const CUSTOMERS: CustomerSeed[] = [
+  { name: "Ana Paula Rodrigues", phone: "5511998887766", email: "ana.paula@email.com" }, // VIP
+  { name: "Mariana Costa", phone: "5511977665544", email: "mariana.costa@email.com" },   // Ativo
+  { name: "Fernanda Lima", phone: "5511966554433", email: "fernanda.lima@email.com" },   // VIP
+  { name: "Camila Souza", phone: "5511955443322" },                                       // Ativo
+  { name: "Juliana Mendes", phone: "5511944332211" },                                     // Ativo
+  { name: "Beatriz Almeida", phone: "5511933221100", email: "bia.almeida@email.com" },   // Inativo
+  { name: "Larissa Ferreira", phone: "5511922110099" },                                   // Inativo
+  { name: "Patrícia Gomes", phone: "5511911009988", email: "pat.gomes@email.com" },      // Novo
+  { name: "Renata Castro", phone: "5511900998877" },                                      // Novo
+  { name: "Sofia Oliveira", phone: "5511899887766", email: "sofia.o@email.com" },        // VIP top
+];
+
+// ─── Helpers para pedidos ────────────────────────────────────────────────────
+const STATUSES = ["PENDING", "CONFIRMED", "SHIPPED", "DELIVERED", "CANCELLED"] as const;
+type OrderStatus = (typeof STATUSES)[number];
+
+type OrderSeed = {
+  customerIdx: number; // índice em CUSTOMERS (0-9)
+  daysAgo: number;     // 0 = hoje, 30 = 30 dias atrás
+  status: OrderStatus;
+  items: Array<{ productName: string; quantity: number }>;
+  notes?: string;
+};
+
+// Distribuição alvo: 28 pedidos espalhados em 90 dias.
+// VIPs (idx 0, 2, 9) têm 4-6 pedidos cada e ticket alto.
+// Inativos (idx 5, 6) só têm pedidos > 60 dias atrás.
+// Novos (idx 7, 8) só têm pedidos < 14 dias atrás.
+// Ativos (idx 1, 3, 4) têm 2-3 pedidos espalhados.
+const ORDERS: OrderSeed[] = [
+  // ─── ÚLTIMOS 7 DIAS (7 pedidos — mix realista de status) ──────────────────
+  { customerIdx: 1, daysAgo: 0, status: "PENDING", items: [
+    { productName: "Camisa Social Branca Slim", quantity: 1 },
+    { productName: "Tênis Casual Branco", quantity: 1 },
+  ], notes: "Cliente quer retirar na loja" },
+
+  { customerIdx: 0, daysAgo: 0, status: "DELIVERED", items: [
+    { productName: "Vestido Floral Primavera", quantity: 1 },
+    { productName: "Bolsa Couro Caramelo", quantity: 1 },
+  ], notes: "Pedido via WhatsApp" },
+
+  { customerIdx: 7, daysAgo: 1, status: "CONFIRMED", items: [
+    { productName: "Blusa de Seda Rose", quantity: 2 },
+  ], notes: "Primeira compra — cliente nova" },
+
+  { customerIdx: 2, daysAgo: 2, status: "SHIPPED", items: [
+    { productName: "Vestido Linho Off-White", quantity: 1 },
+    { productName: "Óculos de Sol Redondo Tartaruga", quantity: 1 },
+  ] },
+
+  { customerIdx: 9, daysAgo: 3, status: "DELIVERED", items: [
+    { productName: "Trench Coat Camel", quantity: 1 },
+    { productName: "Scarpin Nude Salto Médio", quantity: 1 },
+  ] },
+
+  { customerIdx: 8, daysAgo: 5, status: "DELIVERED", items: [
+    { productName: "Cropped Tricot Off-White", quantity: 1 },
+    { productName: "Saia Midi Plissada Preta", quantity: 1 },
+  ], notes: "Primeira compra — cliente nova" },
+
+  { customerIdx: 4, daysAgo: 6, status: "PENDING", items: [
+    { productName: "Calça Jeans Escura", quantity: 1 },
+  ] },
+
+  // ─── 7 A 30 DIAS ATRÁS (7 pedidos — majoritariamente DELIVERED) ──────────
+  { customerIdx: 0, daysAgo: 9, status: "DELIVERED", items: [
+    { productName: "Vestido Midi Marsala", quantity: 1 },
+    { productName: "Colar Pérolas Cultivadas", quantity: 1 },
+  ] },
+
+  { customerIdx: 9, daysAgo: 12, status: "DELIVERED", items: [
+    { productName: "Jaqueta Jeans Premium", quantity: 1 },
+    { productName: "Bolsa Couro Caramelo", quantity: 1 },
+    { productName: "Relógio Dourado Feminino", quantity: 1 },
+  ], notes: "Cliente VIP — atendimento personalizado" },
+
+  { customerIdx: 2, daysAgo: 15, status: "DELIVERED", items: [
+    { productName: "Blazer Alfaiataria Grafite", quantity: 1 },
+  ] },
+
+  { customerIdx: 3, daysAgo: 18, status: "SHIPPED", items: [
+    { productName: "Saia Jeans Midi", quantity: 1 },
+    { productName: "Cropped Tricot Off-White", quantity: 1 },
+  ] },
+
+  { customerIdx: 1, daysAgo: 22, status: "DELIVERED", items: [
+    { productName: "Calça Palazzo Bege", quantity: 1 },
+  ] },
+
+  { customerIdx: 4, daysAgo: 25, status: "DELIVERED", items: [
+    { productName: "Sandália Rasteira Tiras", quantity: 1 },
+    { productName: "Cinto Pele Bege Fivela Dourada", quantity: 1 },
+  ] },
+
+  { customerIdx: 0, daysAgo: 28, status: "CANCELLED", items: [
+    { productName: "Camiseta Estampada Geométrica", quantity: 1 },
+  ], notes: "Cliente desistiu — tamanho indisponível" },
+
+  // ─── 30 A 60 DIAS ATRÁS (7 pedidos — DELIVERED + alguns CONFIRMED) ───────
+  { customerIdx: 2, daysAgo: 33, status: "DELIVERED", items: [
+    { productName: "Vestido Linho Off-White", quantity: 1 },
+    { productName: "Scarpin Nude Salto Médio", quantity: 1 },
+  ] },
+
+  { customerIdx: 9, daysAgo: 38, status: "DELIVERED", items: [
+    { productName: "Trench Coat Camel", quantity: 1 },
+  ] },
+
+  { customerIdx: 0, daysAgo: 42, status: "DELIVERED", items: [
+    { productName: "Bolsa Couro Caramelo", quantity: 1 },
+    { productName: "Óculos de Sol Redondo Tartaruga", quantity: 1 },
+  ] },
+
+  { customerIdx: 1, daysAgo: 45, status: "DELIVERED", items: [
+    { productName: "Camisa Linho Areia", quantity: 2 },
+  ] },
+
+  { customerIdx: 3, daysAgo: 50, status: "DELIVERED", items: [
+    { productName: "Vestido Floral Primavera", quantity: 1 },
+  ] },
+
+  { customerIdx: 2, daysAgo: 54, status: "DELIVERED", items: [
+    { productName: "Saia Midi Plissada Preta", quantity: 1 },
+    { productName: "Blusa de Seda Rose", quantity: 1 },
+  ] },
+
+  { customerIdx: 0, daysAgo: 58, status: "DELIVERED", items: [
+    { productName: "Calça Palazzo Bege", quantity: 2 },
+    { productName: "Cinto Pele Bege Fivela Dourada", quantity: 1 },
+  ] },
+
+  // ─── 60 A 90 DIAS ATRÁS (7 pedidos — inclui os INATIVOS) ─────────────────
+  { customerIdx: 5, daysAgo: 65, status: "DELIVERED", items: [
+    { productName: "Vestido Midi Marsala", quantity: 1 },
+    { productName: "Scarpin Nude Salto Médio", quantity: 1 },
+  ], notes: "Cliente Beatriz — não retorna desde então" },
+
+  { customerIdx: 9, daysAgo: 68, status: "DELIVERED", items: [
+    { productName: "Blazer Alfaiataria Grafite", quantity: 1 },
+    { productName: "Sapato Social Couro", quantity: 1 },
+    { productName: "Camisa Social Branca Slim", quantity: 1 },
+  ], notes: "Pedido executivo — empresa do marido" },
+
+  { customerIdx: 6, daysAgo: 72, status: "DELIVERED", items: [
+    { productName: "Jaqueta Jeans Premium", quantity: 1 },
+  ], notes: "Cliente Larissa — não retorna desde então" },
+
+  { customerIdx: 4, daysAgo: 76, status: "DELIVERED", items: [
+    { productName: "Blusa de Seda Rose", quantity: 3 },
+  ] },
+
+  { customerIdx: 2, daysAgo: 80, status: "DELIVERED", items: [
+    { productName: "Vestido Linho Off-White", quantity: 1 },
+  ] },
+
+  { customerIdx: 5, daysAgo: 85, status: "DELIVERED", items: [
+    { productName: "Bolsa Couro Caramelo", quantity: 1 },
+    { productName: "Relógio Dourado Feminino", quantity: 1 },
+  ], notes: "Beatriz — primeira e última compra grande" },
+
+  { customerIdx: 0, daysAgo: 88, status: "DELIVERED", items: [
+    { productName: "Trench Coat Camel", quantity: 1 },
+  ], notes: "Cliente VIP de longa data" },
+];
+
 async function main() {
   console.log("🌱 Iniciando seed da Bella Trama Boutique...");
 
@@ -313,7 +491,7 @@ async function main() {
   await prisma.product.deleteMany();
   await prisma.store.deleteMany();
 
-  // Cria a loja (descrição atualizada para refletir catálogo unissex + acessórios)
+  // Cria a loja
   const store = await prisma.store.create({
     data: {
       slug: "bella-trama",
@@ -342,174 +520,65 @@ async function main() {
   }
   console.log(`✅ ${PRODUCTS.length} produtos criados`);
 
-  // Cria clientes
-  const customer1 = await prisma.customer.create({
-    data: {
-      storeId: store.id,
-      name: "Ana Paula Rodrigues",
-      phone: "5511998887766",
-      email: "ana.paula@email.com",
-    },
-  });
-  const customer2 = await prisma.customer.create({
-    data: {
-      storeId: store.id,
-      name: "Mariana Costa",
-      phone: "5511977665544",
-      email: "mariana.costa@email.com",
-    },
-  });
-  const customer3 = await prisma.customer.create({
-    data: {
-      storeId: store.id,
-      name: "Fernanda Lima",
-      phone: "5511966554433",
-      email: "fernanda.lima@email.com",
-    },
-  });
-  const customer4 = await prisma.customer.create({
-    data: {
-      storeId: store.id,
-      name: "Camila Souza",
-      phone: "5511955443322",
-    },
-  });
-  const customer5 = await prisma.customer.create({
-    data: {
-      storeId: store.id,
-      name: "Juliana Mendes",
-      phone: "5511944332211",
-    },
-  });
-  console.log("✅ 5 clientes criados");
+  // Cria clientes (ordem preservada para usar customerIdx nos pedidos)
+  const customers = [];
+  for (const c of CUSTOMERS) {
+    const customer = await prisma.customer.create({
+      data: {
+        storeId: store.id,
+        name: c.name,
+        phone: c.phone,
+        email: c.email,
+      },
+    });
+    customers.push(customer);
+  }
+  console.log(`✅ ${CUSTOMERS.length} clientes criados`);
 
-  // Busca produtos para usar nos pedidos (mix de feminino, masculino e acessório)
+  // Mapa de produtos por nome para resolver as referências dos pedidos
   const allProducts = await prisma.product.findMany({ where: { storeId: store.id } });
-  const byName = (n: string) => {
-    const p = allProducts.find((x) => x.name === n);
-    if (!p) throw new Error(`Produto '${n}' não encontrado no seed`);
-    return p;
+  const productByName = new Map(allProducts.map((p) => [p.name, p]));
+
+  const today = new Date();
+  const dateMinusDays = (n: number) => {
+    const d = new Date(today);
+    d.setDate(d.getDate() - n);
+    return d;
   };
 
-  const vestidoFloral = byName("Vestido Floral Primavera");
-  const blusaSeda = byName("Blusa de Seda Rose");
-  const calcaPalazzo = byName("Calça Palazzo Bege");
-  const vestidoLinho = byName("Vestido Linho Off-White");
-  const camisaSocial = byName("Camisa Social Branca Slim");
-  const tenis = byName("Tênis Casual Branco");
-  const bolsa = byName("Bolsa Couro Caramelo");
-  const oculos = byName("Óculos de Sol Redondo Tartaruga");
-  const trench = byName("Trench Coat Camel");
+  // Cria pedidos a partir do array declarativo
+  for (const o of ORDERS) {
+    const customer = customers[o.customerIdx];
+    if (!customer) throw new Error(`customerIdx ${o.customerIdx} fora do range`);
 
-  // Pedidos mockados com datas variadas
-  const today = new Date();
-  const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
-  const twoDaysAgo = new Date(today); twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
-  const weekAgo = new Date(today); weekAgo.setDate(weekAgo.getDate() - 7);
-  const monthAgo = new Date(today); monthAgo.setDate(monthAgo.getDate() - 30);
+    const orderItems = o.items.map((item) => {
+      const product = productByName.get(item.productName);
+      if (!product) throw new Error(`Produto '${item.productName}' não encontrado no seed`);
+      return {
+        productId: product.id,
+        quantity: item.quantity,
+        unitPrice: product.price,
+      };
+    });
 
-  // Hoje — entregue (feminino + acessório)
-  await prisma.order.create({
-    data: {
-      storeId: store.id,
-      customerId: customer1.id,
-      status: "DELIVERED",
-      total: vestidoFloral.price + bolsa.price,
-      notes: "Pedido via WhatsApp",
-      createdAt: today,
-      items: {
-        create: [
-          { productId: vestidoFloral.id, quantity: 1, unitPrice: vestidoFloral.price },
-          { productId: bolsa.id, quantity: 1, unitPrice: bolsa.price },
-        ],
+    const total = orderItems.reduce((sum, it) => sum + it.unitPrice * it.quantity, 0);
+    const createdAt = dateMinusDays(o.daysAgo);
+
+    await prisma.order.create({
+      data: {
+        storeId: store.id,
+        customerId: customer.id,
+        status: o.status,
+        total,
+        notes: o.notes,
+        createdAt,
+        updatedAt: createdAt,
+        items: { create: orderItems },
       },
-    },
-  });
+    });
+  }
+  console.log(`✅ ${ORDERS.length} pedidos criados (datas espalhadas em 90 dias)`);
 
-  // Hoje — pendente (masculino)
-  await prisma.order.create({
-    data: {
-      storeId: store.id,
-      customerId: customer2.id,
-      status: "PENDING",
-      total: camisaSocial.price + tenis.price,
-      notes: "Cliente quer retirar na loja",
-      createdAt: today,
-      items: {
-        create: [
-          { productId: camisaSocial.id, quantity: 1, unitPrice: camisaSocial.price },
-          { productId: tenis.id, quantity: 1, unitPrice: tenis.price },
-        ],
-      },
-    },
-  });
-
-  // Ontem — confirmado (feminino premium)
-  await prisma.order.create({
-    data: {
-      storeId: store.id,
-      customerId: customer3.id,
-      status: "CONFIRMED",
-      total: vestidoLinho.price + oculos.price,
-      createdAt: yesterday,
-      items: {
-        create: [
-          { productId: vestidoLinho.id, quantity: 1, unitPrice: vestidoLinho.price },
-          { productId: oculos.id, quantity: 1, unitPrice: oculos.price },
-        ],
-      },
-    },
-  });
-
-  // 2 dias atrás — enviado (trench coat)
-  await prisma.order.create({
-    data: {
-      storeId: store.id,
-      customerId: customer4.id,
-      status: "SHIPPED",
-      total: trench.price,
-      createdAt: twoDaysAgo,
-      items: {
-        create: [
-          { productId: trench.id, quantity: 1, unitPrice: trench.price },
-        ],
-      },
-    },
-  });
-
-  // Semana atrás — entregue (3 blusas)
-  await prisma.order.create({
-    data: {
-      storeId: store.id,
-      customerId: customer5.id,
-      status: "DELIVERED",
-      total: blusaSeda.price * 3,
-      createdAt: weekAgo,
-      items: {
-        create: [
-          { productId: blusaSeda.id, quantity: 3, unitPrice: blusaSeda.price },
-        ],
-      },
-    },
-  });
-
-  // Mês atrás — entregue (calça)
-  await prisma.order.create({
-    data: {
-      storeId: store.id,
-      customerId: customer1.id,
-      status: "DELIVERED",
-      total: calcaPalazzo.price * 2,
-      createdAt: monthAgo,
-      items: {
-        create: [
-          { productId: calcaPalazzo.id, quantity: 2, unitPrice: calcaPalazzo.price },
-        ],
-      },
-    },
-  });
-
-  console.log("✅ 6 pedidos criados");
   console.log("\n🎉 Seed concluído! Bella Trama Boutique pronta.");
   console.log(`   Loja ID: ${store.id}`);
   console.log(`   Slug: ${store.slug}`);
